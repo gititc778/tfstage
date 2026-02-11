@@ -19,7 +19,7 @@ on:
         - EventHub
       # --- UPDATED INPUT TO CHOICE ---
       workspace:
-        description: 'Hardcoded workspace to operate on'
+        description: 'Workspace'
         required: true
         default: 'azure1'
         type: choice
