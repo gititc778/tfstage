@@ -17,11 +17,15 @@ on:
         - Functions
         - CosmosDB
         - EventHub
+      # --- UPDATED INPUT TO CHOICE ---
       workspace:
-        description: 'Name of the workspace to operate on'
+        description: 'Workspace'
         required: true
-        default: 'dev'
-        type: string
+        default: 'azure1'
+        type: choice
+        options:
+        - azure1
+        - azure2
       confirmation:
         description: 'Type the module name (All, Databricks, etc.) to confirm destruction'
         required: true
