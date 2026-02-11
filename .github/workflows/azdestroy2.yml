@@ -1,0 +1,92 @@
+name: "Destroy_Azure2"
+run-name: "Destroy ${{ inputs.module }} in ${{ inputs.workspace }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Module to destroy (Select "All" for full destruction)'
+        required: true
+        default: 'All'
+        type: choice
+        options:
+        - All
+        - Databricks
+        - Data Factory
+        - Synapse
+        - Functions
+        - CosmosDB
+        - EventHub
+      workspace:
+        description: 'Name of the workspace to operate on'
+        required: true
+        default: 'dev'
+        type: string
+      confirmation:
+        description: 'Type the module name (All, Databricks, etc.) to confirm destruction'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: "${{ inputs.module == 'All' && 'Terraform Destroy ALL' || format('Terraform Destroy {0}', inputs.module) }} in ${{ inputs.workspace }}"
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Verify Confirmation
+        run: |
+          if [ "${{ inputs.module }}" != "${{ inputs.confirmation }}" ]; then
+            echo "Error: Confirmation input '${{ inputs.confirmation }}' does not match selected module '${{ inputs.module }}'."
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Select Workspace
+        run: |
+          echo "Selecting workspace: ${{ inputs.workspace }}"
+          terraform workspace select ${{ inputs.workspace }} || (echo "Workspace ${{ inputs.workspace }} not found!" && exit 1)
+
+      - name: Terraform Destroy
+        run: |
+          # Map display names to internal module names
+          declare -A MODULE_MAP=(
+            ["All"]="all"
+            ["Databricks"]="databricks"
+            ["Data Factory"]="data_factory"
+            ["Synapse"]="synapse"
+            ["Functions"]="functions"
+            ["CosmosDB"]="cosmosdb"
+            ["EventHub"]="eventhub"
+          )
+          
+          SELECTED_MODULE="${MODULE_MAP[${{ inputs.module }}]}"
+          
+          echo "Selected Input: ${{ inputs.module }}"
+          echo "Internal Module: $SELECTED_MODULE"
+          echo "Current Workspace: ${{ inputs.workspace }}"
+          
+          if [ "$SELECTED_MODULE" == "all" ]; then
+            echo "Running full destruction for workspace ${{ inputs.workspace }}..."
+            terraform destroy -auto-approve
+          else
+            echo "Running targeted destruction for: module.$SELECTED_MODULE in ${{ inputs.workspace }}"
+            terraform destroy -auto-approve -target=module.$SELECTED_MODULE
+          fi
