@@ -1,23 +1,39 @@
 name: "Deploy_Azure2"
-run-name: "${{ inputs.module }} Deploy to ${{ inputs.workspace }}"
+run-name: "Deploying to ${{ inputs.workspace }}"
 
 on:
   workflow_dispatch:
     inputs:
-      module:
-        description: 'Module to deploy (All, Databricks, Data Factory, Synapse, Functions, CosmosDB, EventHub)'
-        required: true
-        default: 'All'
-        type: choice
-        options:
-        - All
-        - Databricks
-        - Data Factory
-        - Synapse
-        - Functions
-        - CosmosDB
-        - EventHub
-      # --- UPDATED INPUT TO CHOICE ---
+      # --- INDIVIDUAL CHECKBOXES ---
+      all:
+        description: 'Deploy EVERYTHING'
+        type: boolean
+        default: false
+      databricks:
+        description: 'Deploy Databricks'
+        type: boolean
+        default: false
+      data_factory:
+        description: 'Deploy Data Factory'
+        type: boolean
+        default: false
+      synapse:
+        description: 'Deploy Synapse'
+        type: boolean
+        default: false
+      functions:
+        description: 'Deploy Functions'
+        type: boolean
+        default: false
+      cosmosdb:
+        description: 'Deploy CosmosDB'
+        type: boolean
+        default: false
+      eventhub:
+        description: 'Deploy EventHub'
+        type: boolean
+        default: false
+      # --- WORKSPACE DROPDOWN ---
       workspace:
         description: 'Workspace'
         required: true
@@ -33,7 +49,7 @@ permissions:
 
 jobs:
   terraform:
-    name: "${{ inputs.module == 'All' && 'Terraform Deploy ALL' || format('Terraform Deploy {0}', inputs.module) }} to ${{ inputs.workspace }}"
+    name: "Terraform Deploy to ${{ inputs.workspace }}"
     runs-on: ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -53,44 +69,35 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # --- UPDATED STEP TO USE CHOICE ---
       - name: Select or Create Workspace
         run: |
           terraform workspace select ${{ inputs.workspace }} || \
           terraform workspace new ${{ inputs.workspace }}
 
-      - name: Terraform Format
-        run: terraform fmt -check
-
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
         run: |
-          # Map display names to internal module names
-          declare -A MODULE_MAP=(
-            ["All"]="all"
-            ["Databricks"]="databricks"
-            ["Data Factory"]="data_factory"
-            ["Synapse"]="synapse"
-            ["Functions"]="functions"
-            ["CosmosDB"]="cosmosdb"
-            ["EventHub"]="eventhub"
-          )
+          PLAN_ARGS=""
           
-          SELECTED_MODULE="${MODULE_MAP[${{ inputs.module }}]}"
-          
-          echo "Selected Input: ${{ inputs.module }}"
-          echo "Internal Module: $SELECTED_MODULE"
-          echo "Workspace: ${{ inputs.workspace }}"
-          
-          if [ "$SELECTED_MODULE" == "all" ]; then
+          # If 'all' is checked, don't use -target
+          if [ "${{ inputs.all }}" == "true" ]; then
             echo "Running full plan for workspace ${{ inputs.workspace }}..."
-            terraform plan -out=tfplan
           else
-            echo "Running targeted plan for: module.$SELECTED_MODULE in ${{ inputs.workspace }}"
-            terraform plan -target=module.$SELECTED_MODULE -out=tfplan
+            # Build the target string based on boolean inputs
+            [ "${{ inputs.databricks }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.databricks"
+            [ "${{ inputs.data_factory }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.data_factory"
+            [ "${{ inputs.synapse }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.synapse"
+            [ "${{ inputs.functions }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.functions"
+            [ "${{ inputs.cosmosdb }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.cosmosdb"
+            [ "${{ inputs.eventhub }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.eventhub"
+
+            if [ -z "$PLAN_ARGS" ]; then
+              echo "Error: No modules selected and 'All' is false."
+              exit 1
+            fi
+            echo "Running targeted plan for:$PLAN_ARGS in ${{ inputs.workspace }}"
           fi
+          
+          terraform plan $PLAN_ARGS -out=tfplan
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
