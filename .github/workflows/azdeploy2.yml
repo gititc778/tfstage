@@ -1,11 +1,11 @@
-name: "Destroy_Azure"
-run-name: "Destroy ${{ inputs.module }} in ${{ inputs.workspace }}"
+name: "Deploy_Azure"
+run-name: "${{ inputs.module }} Deploy to ${{ inputs.workspace }}"
 
 on:
   workflow_dispatch:
     inputs:
       module:
-        description: 'Module to destroy (Select "All" for full destruction)'
+        description: 'Module to deploy (All, Databricks, Data Factory, Synapse, Functions, CosmosDB, EventHub)'
         required: true
         default: 'All'
         type: choice
@@ -26,17 +26,14 @@ on:
         options:
         - azure1
         - azure2
-      confirmation:
-        description: 'Type the module name (All, Databricks, etc.) to confirm destruction'
-        required: true
-        type: string
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   terraform:
-    name: "${{ inputs.module == 'All' && 'Terraform Destroy ALL' || format('Terraform Destroy {0}', inputs.module) }} in ${{ inputs.workspace }}"
+    name: "${{ inputs.module == 'All' && 'Terraform Deploy ALL' || format('Terraform Deploy {0}', inputs.module) }} to ${{ inputs.workspace }}"
     runs-on: ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -48,13 +45,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Verify Confirmation
-        run: |
-          if [ "${{ inputs.module }}" != "${{ inputs.confirmation }}" ]; then
-            echo "Error: Confirmation input '${{ inputs.confirmation }}' does not match selected module '${{ inputs.module }}'."
-            exit 1
-          fi
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -63,12 +53,19 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Select Workspace
+      # --- UPDATED STEP TO USE CHOICE ---
+      - name: Select or Create Workspace
         run: |
-          echo "Selecting workspace: ${{ inputs.workspace }}"
-          terraform workspace select ${{ inputs.workspace }} || (echo "Workspace ${{ inputs.workspace }} not found!" && exit 1)
+          terraform workspace select ${{ inputs.workspace }} || \
+          terraform workspace new ${{ inputs.workspace }}
 
-      - name: Terraform Destroy
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
         run: |
           # Map display names to internal module names
           declare -A MODULE_MAP=(
@@ -85,12 +82,15 @@ jobs:
           
           echo "Selected Input: ${{ inputs.module }}"
           echo "Internal Module: $SELECTED_MODULE"
-          echo "Current Workspace: ${{ inputs.workspace }}"
+          echo "Workspace: ${{ inputs.workspace }}"
           
           if [ "$SELECTED_MODULE" == "all" ]; then
-            echo "Running full destruction for workspace ${{ inputs.workspace }}..."
-            terraform destroy -auto-approve
+            echo "Running full plan for workspace ${{ inputs.workspace }}..."
+            terraform plan -out=tfplan
           else
-            echo "Running targeted destruction for: module.$SELECTED_MODULE in ${{ inputs.workspace }}"
-            terraform destroy -auto-approve -target=module.$SELECTED_MODULE
+            echo "Running targeted plan for: module.$SELECTED_MODULE in ${{ inputs.workspace }}"
+            terraform plan -target=module.$SELECTED_MODULE -out=tfplan
           fi
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
