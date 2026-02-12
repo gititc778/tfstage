@@ -24,7 +24,7 @@ data "azurerm_resource_group" "target" {
 }
 
 module "databricks" {
-  source = "./modules/az/databricks"
+  source = "./modules/databricks"
 
   name                = "${local.name_prefix}-dbx-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
@@ -34,7 +34,7 @@ module "databricks" {
 }
 
 module "data_factory" {
-  source = "./modules/az/data_factory"
+  source = "./modules/data_factory"
 
   name                = "${local.name_prefix}-adf-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
@@ -43,7 +43,7 @@ module "data_factory" {
 }
 
 module "synapse" {
-  source = "./modules/az/synapse"
+  source = "./modules/synapse"
 
   name                = "${local.name_prefix}-syn-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
@@ -54,7 +54,7 @@ module "synapse" {
 }
 
 module "functions" {
-  source = "./modules/az/functions"
+  source = "./modules/functions"
 
   name                = "${local.name_prefix}-func-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
@@ -63,7 +63,7 @@ module "functions" {
 }
 
 module "cosmosdb" {
-  source = "./modules/az/cosmosdb"
+  source = "./modules/cosmosdb"
 
   name                = "cosmos-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
@@ -72,7 +72,7 @@ module "cosmosdb" {
 }
 
 module "eventhub" {
-  source = "./modules/az/eventhub"
+  source = "./modules/eventhub"
 
   name                = "${local.name_prefix}-evh-${random_string.unique.result}"
   resource_group_name = data.azurerm_resource_group.target.name
