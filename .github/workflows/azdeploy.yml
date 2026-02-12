@@ -1,4 +1,4 @@
-name: "Deploy_Azure2"
+name: "Deploy_Azure"
 run-name: "Deploying to ${{ inputs.workspace }}"
 
 on:
