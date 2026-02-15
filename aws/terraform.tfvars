@@ -8,3 +8,8 @@ s3_bucket_prefix = "terraform-sandbox"
 
 rds_db_username = "admin"
 rds_db_password = "Terraform123!"
+
+ecr_repository_name = "terraform-sandbox-repo"
+
+
+

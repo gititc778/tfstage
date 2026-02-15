@@ -33,3 +33,8 @@ variable "rds_db_password" {
   type      = string
   sensitive = true
 }
+
+variable "ecr_repository_name" {
+  type = string
+}
+

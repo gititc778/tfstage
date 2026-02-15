@@ -23,8 +23,7 @@ locals {
     contains(var.services_to_deploy, "ecs") ||
     contains(var.services_to_deploy, "lambda") ||
     contains(var.services_to_deploy, "rds") ||
-    contains(var.services_to_deploy, "opensearch") ||
-    contains(var.services_to_deploy, "sagemaker")
+    contains(var.services_to_deploy, "opensearch")
   )
 }
 
@@ -91,3 +90,84 @@ module "rds" {
 #   subnet_ids         = module.vpc["network"].private_subnet_ids
 #   vpc_id             = module.vpc["network"].vpc_id
 # }
+
+
+################################
+# ECR MODULE
+################################
+
+module "ecr" {
+  source   = "./modules/ecr"
+  for_each = contains(var.services_to_deploy, "ecr") ? { ecr = true } : {}
+
+  repository_name = var.ecr_repository_name
+}
+
+
+################################
+# SNS MODULE
+################################
+
+module "sns" {
+  source   = "./modules/sns"
+  for_each = contains(var.services_to_deploy, "sns") ? { sns = true } : {}
+}
+
+
+################################
+# DevOps MODULE
+################################
+module "codecommit" {
+  source   = "./modules/devops/codecommit"
+  for_each = contains(var.services_to_deploy, "codecommit") ? { codecommit = true } : {}
+}
+
+module "codebuild" {
+  source          = "./modules/devops/codebuild"
+  for_each        = contains(var.services_to_deploy, "codebuild") ? { codebuild = true } : {}
+  repository_name = module.codecommit["codecommit"].repository_name
+}
+
+module "codepipeline" {
+  source             = "./modules/devops/codepipeline"
+  for_each           = contains(var.services_to_deploy, "codepipeline") ? { codepipeline = true } : {}
+  repository_name    = module.codecommit["codecommit"].repository_name
+  build_project_name = module.codebuild["codebuild"].project_name
+}
+
+################################
+# GLUE MODULE
+################################
+
+module "glue" {
+  source   = "./modules/glue"
+  for_each = contains(var.services_to_deploy, "glue") ? { glue = true } : {}
+}
+
+################################
+# Opensearch MODULE
+################################
+
+module "opensearch" {
+  source   = "./modules/opensearch"
+  for_each = contains(var.services_to_deploy, "opensearch") ? { opensearch = true } : {}
+}
+
+################################
+# Sagemaker MODULE
+################################
+
+
+module "sagemaker" {
+  source   = "./modules/sagemaker"
+  for_each = contains(var.services_to_deploy, "sagemaker") ? { sagemaker = true } : {}
+}
+
+################################
+# Quicksight MODULE
+################################
+
+module "quicksight" {
+  source   = "./modules/quicksight"
+  for_each = contains(var.services_to_deploy, "quicksight") ? { quicksight = true } : {}
+}
