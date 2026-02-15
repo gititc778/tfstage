@@ -19,6 +19,57 @@ on:
         type: boolean
         default: false
 
+      ecr:
+        description: "Destroy ECR"
+        type: boolean
+        default: false
+
+      lambda:
+        description: "Destroy Lambda"
+        type: boolean
+        default: false
+
+      sns:
+        description: "Destroy SNS"
+        type: boolean
+        default: false
+
+      codecommit:
+        description: "Destroy CodeCommit"
+        type: boolean
+        default: false
+
+      codebuild:
+        description: "Destroy CodeBuild"
+        type: boolean
+        default: false
+
+      codepipeline:
+        description: "Destroy CodePipeline"
+        type: boolean
+        default: false
+
+      glue:
+        description: "Destroy Glue"
+        type: boolean
+        default: false
+
+      opensearch:
+        description: "Destroy OpenSearch"
+        type: boolean
+        default: false
+
+      sagemaker:
+        description: "Destroy SageMaker"
+        type: boolean
+        default: false
+
+      quicksight:
+        description: "Destroy QuickSight"
+        type: boolean
+        default: false
+
+
       workspace:
         description: "Workspace"
         required: true
@@ -73,6 +124,17 @@ jobs:
           [ "${{ inputs.ec2 }}" == "true" ] && SERVICES="$SERVICES\"ec2\","
           [ "${{ inputs.s3 }}" == "true" ] && SERVICES="$SERVICES\"s3\","
           [ "${{ inputs.rds }}" == "true" ] && SERVICES="$SERVICES\"rds\","
+          [ "${{ inputs.ecr }}" == "true" ] && SERVICES="$SERVICES\"ecr\","
+          [ "${{ inputs.lambda }}" == "true" ] && SERVICES="$SERVICES\"lambda\","
+          [ "${{ inputs.sns }}" == "true" ] && SERVICES="$SERVICES\"sns\","
+          [ "${{ inputs.codecommit }}" == "true" ] && SERVICES="$SERVICES\"codecommit\","
+          [ "${{ inputs.codebuild }}" == "true" ] && SERVICES="$SERVICES\"codebuild\","
+          [ "${{ inputs.codepipeline }}" == "true" ] && SERVICES="$SERVICES\"codepipeline\","
+          [ "${{ inputs.glue }}" == "true" ] && SERVICES="$SERVICES\"glue\","
+          [ "${{ inputs.opensearch }}" == "true" ] && SERVICES="$SERVICES\"opensearch\","
+          [ "${{ inputs.sagemaker }}" == "true" ] && SERVICES="$SERVICES\"sagemaker\","
+          [ "${{ inputs.quicksight }}" == "true" ] && SERVICES="$SERVICES\"quicksight\","
+
 
           SERVICES="${SERVICES%,}]"
 
