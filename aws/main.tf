@@ -159,8 +159,9 @@ module "opensearch" {
 
 
 module "sagemaker" {
-  source   = "./modules/sagemaker"
-  for_each = contains(var.services_to_deploy, "sagemaker") ? { sagemaker = true } : {}
+  source                 = "./modules/sagemaker"
+  for_each               = contains(var.services_to_deploy, "sagemaker") ? { sagemaker = true } : {}
+  notebook_instance_type = var.notebook_instance_type
 }
 
 ################################

@@ -12,4 +12,5 @@ rds_db_password = "Terraform123!"
 ecr_repository_name = "terraform-sandbox-repo"
 
 
+notebook_instance_type = "ml.t3.micro"
 

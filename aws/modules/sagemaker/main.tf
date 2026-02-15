@@ -23,3 +23,16 @@ resource "aws_iam_role_policy_attachment" "sagemaker_full_access" {
   role       = aws_iam_role.sagemaker_execution.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
 }
+
+resource "aws_sagemaker_notebook_instance" "this" {
+  name          = "terraform-notebook-${random_string.suffix.result}"
+  role_arn      = aws_iam_role.sagemaker_execution.arn
+  instance_type = var.notebook_instance_type
+
+  lifecycle_config_name = null
+  platform_identifier   = "notebook-al2-v1"
+
+  tags = {
+    Name = "terraform-sagemaker-notebook"
+  }
+}

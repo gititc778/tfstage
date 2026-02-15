@@ -38,3 +38,6 @@ variable "ecr_repository_name" {
   type = string
 }
 
+variable "notebook_instance_type" {
+  type = string
+}
