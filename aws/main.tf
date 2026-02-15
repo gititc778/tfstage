@@ -36,7 +36,8 @@ module "vpc" {
   source   = "./modules/vpc"
   for_each = local.needs_network ? { network = true } : {}
 
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr_block
+
 }
 
 ################################
@@ -47,5 +48,46 @@ module "ec2" {
   source   = "./modules/ec2"
   for_each = contains(var.services_to_deploy, "ec2") ? { ec2 = true } : {}
 
-  subnet_id = module.vpc["network"].public_subnet_id
+  subnet_id     = module.vpc["network"].public_subnet_id
+  ami           = var.ec2_ami
+  instance_type = var.ec2_instance_type
 }
+
+
+################################
+# S3 MODULE
+################################
+
+module "s3" {
+  source   = "./modules/s3"
+  for_each = contains(var.services_to_deploy, "s3") ? { s3 = true } : {}
+
+  bucket_prefix = var.s3_bucket_prefix
+
+}
+
+################################
+# RDS MODULE
+################################
+
+module "rds" {
+  source   = "./modules/rds"
+  for_each = contains(var.services_to_deploy, "rds") ? { rds = true } : {}
+
+  vpc_id             = module.vpc["network"].vpc_id
+  private_subnet_ids = module.vpc["network"].private_subnet_ids
+  db_username        = var.rds_db_username
+  db_password        = var.rds_db_password
+}
+
+################################
+# LAMBDA MODULE
+################################
+
+# module "lambda" {
+#   source   = "./modules/lambda"
+#   for_each = contains(var.services_to_deploy, "lambda") ? { lambda = true } : {}
+
+#   subnet_ids         = module.vpc["network"].private_subnet_ids
+#   vpc_id             = module.vpc["network"].vpc_id
+# }
