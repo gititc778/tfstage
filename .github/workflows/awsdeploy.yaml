@@ -1,4 +1,5 @@
-name: Deploy AWS 
+name: Deploy AWS
+run-name: Deploying to ${{ inputs.workspace }}
 
 on:
   workflow_dispatch:
@@ -15,17 +16,29 @@ on:
         description: "Deploy RDS"
         type: boolean
         default: false
+      workspace:
+        description: "Workspace"
+        required: true
+        default: "aws1"
+        type: choice
+        options:
+          - aws1
+          - aws2
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: aws   
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       ########################################
-      # AWS LOGIN 
+      # AWS LOGIN
       ########################################
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -40,6 +53,17 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      ########################################
+      # Workspace Select / Create
+      ########################################
+      - name: Select or Create Workspace
+        run: |
+          terraform workspace select ${{ inputs.workspace }} || \
+          terraform workspace new ${{ inputs.workspace }}
+
+      ########################################
+      # Build services list
+      ########################################
       - name: Build services list
         id: build
         run: |
@@ -53,5 +77,8 @@ jobs:
 
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
+      ########################################
+      # Terraform Plan
+      ########################################
       - name: Terraform Plan
         run: terraform plan -var="services_to_deploy=${{ steps.build.outputs.services }}"

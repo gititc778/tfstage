@@ -1,40 +1,48 @@
 name: Destroy AWS
+run-name: Destroying from ${{ inputs.workspace }}
 
 on:
   workflow_dispatch:
     inputs:
-      action:
-        description: "Terraform Action"
-        type: choice
-        required: true
-        options:
-          - plan
-          - apply
-          - destroy
-
       ec2:
-        description: "Deploy EC2"
+        description: "Destroy EC2"
         type: boolean
         default: false
 
       s3:
-        description: "Deploy S3"
+        description: "Destroy S3"
         type: boolean
         default: false
 
       rds:
-        description: "Deploy RDS"
+        description: "Destroy RDS"
         type: boolean
         default: false
+
+      workspace:
+        description: "Workspace"
+        required: true
+        default: "aws1"
+        type: choice
+        options:
+          - aws1
+          - aws2
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: aws
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
+      ########################################
+      # AWS LOGIN
+      ########################################
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -48,6 +56,15 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      ########################################
+      # Workspace Select / Create
+      ########################################
+      - name: Select Workspace
+        run: terraform workspace select ${{ inputs.workspace }}
+
+      ########################################
+      # Build services list
+      ########################################
       - name: Build services list
         id: build
         run: |
@@ -59,16 +76,15 @@ jobs:
 
           SERVICES="${SERVICES%,}]"
 
+          if [ "$SERVICES" == "]" ]; then
+            echo "Error: No services selected for destroy."
+            exit 1
+          fi
+
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-      - name: Terraform Plan
-        if: ${{ inputs.action == 'plan' }}
-        run: terraform plan -var="services_to_deploy=${{ steps.build.outputs.services }}"
-
-      - name: Terraform Apply
-        if: ${{ inputs.action == 'apply' }}
-        run: terraform apply -auto-approve -var="services_to_deploy=${{ steps.build.outputs.services }}"
-
+      ########################################
+      # Terraform Destroy
+      ########################################
       - name: Terraform Destroy
-        if: ${{ inputs.action == 'destroy' }}
         run: terraform destroy -auto-approve -var="services_to_deploy=${{ steps.build.outputs.services }}"
