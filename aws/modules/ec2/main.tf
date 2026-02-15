@@ -1,0 +1,56 @@
+################################
+# Random suffix
+################################
+
+resource "random_string" "suffix" {
+  length  = 5
+  special = false
+  upper   = false
+}
+
+################################
+# Security Group
+################################
+
+data "aws_subnet" "selected" {
+  id = var.subnet_id
+}
+
+resource "aws_security_group" "this" {
+  name   = "terraform-ec2-sg-${random_string.suffix.result}"
+  vpc_id = data.aws_subnet.selected.vpc_id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "terraform-ec2-sg-${random_string.suffix.result}"
+  }
+}
+
+################################
+# EC2 Instance
+################################
+
+resource "aws_instance" "this" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.this.id]
+
+  tags = {
+    Name = "terraform-ec2-${random_string.suffix.result}"
+  }
+}

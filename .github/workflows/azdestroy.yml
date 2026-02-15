@@ -1,0 +1,114 @@
+name: "Destroy_Azure"
+run-name: "Destroying modules in ${{ inputs.workspace }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # --- INDIVIDUAL CHECKBOXES FOR MODULES ---
+      all:
+        description: 'Destroy EVERYTHING in workspace'
+        type: boolean
+        default: false
+      databricks:
+        description: 'Destroy Databricks'
+        type: boolean
+        default: false
+      data_factory:
+        description: 'Destroy Data Factory'
+        type: boolean
+        default: false
+      synapse:
+        description: 'Destroy Synapse'
+        type: boolean
+        default: false
+      functions:
+        description: 'Destroy Functions'
+        type: boolean
+        default: false
+      cosmosdb:
+        description: 'Destroy CosmosDB'
+        type: boolean
+        default: false
+      eventhub:
+        description: 'Destroy EventHub'
+        type: boolean
+        default: false
+      # --- WORKSPACE DROPDOWN ---
+      workspace:
+        description: 'Workspace'
+        required: true
+        default: 'azure1'
+        type: choice
+        options:
+        - azure1
+        - azure2
+      # --- CONFIRMATION ---
+      confirmation:
+        description: 'Type "Confirm" to proceed with destruction'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: "Terraform Destroy in ${{ inputs.workspace }}"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: azure
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Verify Confirmation
+        run: |
+          if [ "${{ inputs.confirmation }}" != "Confirm" ]; then
+            echo "Error: You must type 'Confirm' to proceed."
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Select Workspace
+        run: |
+          echo "Selecting workspace: ${{ inputs.workspace }}"
+          terraform workspace select ${{ inputs.workspace }} || (echo "Workspace ${{ inputs.workspace }} not found!" && exit 1)
+
+      - name: Terraform Destroy
+        run: |
+          DESTROY_ARGS=""
+          
+          # If 'all' is checked, don't use -target
+          if [ "${{ inputs.all }}" == "true" ]; then
+            echo "Running full destruction for workspace ${{ inputs.workspace }}..."
+          else
+            # Build the target string based on boolean inputs
+            [ "${{ inputs.databricks }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.databricks"
+            [ "${{ inputs.data_factory }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.data_factory"
+            [ "${{ inputs.synapse }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.synapse"
+            [ "${{ inputs.functions }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.functions"
+            [ "${{ inputs.cosmosdb }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.cosmosdb"
+            [ "${{ inputs.eventhub }}" == "true" ] && DESTROY_ARGS="$DESTROY_ARGS -target=module.eventhub"
+
+            if [ -z "$DESTROY_ARGS" ]; then
+              echo "Error: No modules selected and 'All' is false."
+              exit 1
+            fi
+            echo "Running targeted destruction for:$DESTROY_ARGS in ${{ inputs.workspace }}"
+          fi
+          
+          terraform destroy $DESTROY_ARGS -auto-approve

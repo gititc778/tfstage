@@ -1,0 +1,106 @@
+name: "Deploy_Azure"
+run-name: "Deploying to ${{ inputs.workspace }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # --- INDIVIDUAL CHECKBOXES ---
+      all:
+        description: 'Deploy EVERYTHING'
+        type: boolean
+        default: false
+      databricks:
+        description: 'Deploy Databricks'
+        type: boolean
+        default: false
+      data_factory:
+        description: 'Deploy Data Factory'
+        type: boolean
+        default: false
+      synapse:
+        description: 'Deploy Synapse'
+        type: boolean
+        default: false
+      functions:
+        description: 'Deploy Functions'
+        type: boolean
+        default: false
+      cosmosdb:
+        description: 'Deploy CosmosDB'
+        type: boolean
+        default: false
+      eventhub:
+        description: 'Deploy EventHub'
+        type: boolean
+        default: false
+      # --- WORKSPACE DROPDOWN ---
+      workspace:
+        description: 'Workspace'
+        required: true
+        default: 'azure1'
+        type: choice
+        options:
+        - azure1
+        - azure2
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    name: "Terraform Deploy to ${{ inputs.workspace }}"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: azure
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Select or Create Workspace
+        run: |
+          terraform workspace select ${{ inputs.workspace }} || \
+          terraform workspace new ${{ inputs.workspace }}
+
+      - name: Terraform Plan
+        run: |
+          PLAN_ARGS=""
+          
+          # If 'all' is checked, don't use -target
+          if [ "${{ inputs.all }}" == "true" ]; then
+            echo "Running full plan for workspace ${{ inputs.workspace }}..."
+          else
+            # Build the target string based on boolean inputs
+            [ "${{ inputs.databricks }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.databricks"
+            [ "${{ inputs.data_factory }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.data_factory"
+            [ "${{ inputs.synapse }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.synapse"
+            [ "${{ inputs.functions }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.functions"
+            [ "${{ inputs.cosmosdb }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.cosmosdb"
+            [ "${{ inputs.eventhub }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.eventhub"
+
+            if [ -z "$PLAN_ARGS" ]; then
+              echo "Error: No modules selected and 'All' is false."
+              exit 1
+            fi
+            echo "Running targeted plan for:$PLAN_ARGS in ${{ inputs.workspace }}"
+          fi
+          
+          terraform plan $PLAN_ARGS -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

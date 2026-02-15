@@ -1,0 +1,57 @@
+name: Deploy AWS Sandbox
+
+on:
+  workflow_dispatch:
+    inputs:
+      ec2:
+        description: "Deploy EC2"
+        type: boolean
+        default: false
+      s3:
+        description: "Deploy S3"
+        type: boolean
+        default: false
+      rds:
+        description: "Deploy RDS"
+        type: boolean
+        default: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      ########################################
+      # AWS LOGIN 
+      ########################################
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Build services list
+        id: build
+        run: |
+          SERVICES="["
+
+          [ "${{ inputs.ec2 }}" == "true" ] && SERVICES="$SERVICES\"ec2\","
+          [ "${{ inputs.s3 }}" == "true" ] && SERVICES="$SERVICES\"s3\","
+          [ "${{ inputs.rds }}" == "true" ] && SERVICES="$SERVICES\"rds\","
+
+          SERVICES="${SERVICES%,}]"
+
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Terraform Plan
+        run: terraform plan -var="services_to_deploy=${{ steps.build.outputs.services }}"
