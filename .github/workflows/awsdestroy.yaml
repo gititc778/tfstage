@@ -95,7 +95,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: eu-west-2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -124,7 +124,6 @@ jobs:
           [ "${{ inputs.opensearch }}" == "true" ] && SERVICES="$SERVICES\"opensearch\","
           [ "${{ inputs.sagemaker }}" == "true" ] && SERVICES="$SERVICES\"sagemaker\","
           [ "${{ inputs.quicksight }}" == "true" ] && SERVICES="$SERVICES\"quicksight\","
-          [ "${{ inputs.redshift }}" == "true" ] && SERVICES="$SERVICES\"redshift\","
 
           SERVICES="${SERVICES%,}]"
 
@@ -142,14 +141,19 @@ jobs:
         run: |
           if [ "${{ inputs.destroy_mode }}" == "all" ]; then
             echo "Destroying ALL workspaces..."
-            for ws in $(terraform workspace list | sed 's/*//g'); do
-              ws=$(echo $ws | xargs)
-              echo "Switching to workspace: $ws"
-              terraform workspace select $ws
-              terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+
+            terraform workspace list | sed 's/*//' | while read ws; do
+              ws=$(echo "$ws" | xargs)
+
+              if [ -n "$ws" ] && [ "$ws" != "default" ]; then
+                echo "Switching to workspace: $ws"
+                terraform workspace select "$ws"
+                terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+              fi
             done
+
           else
             echo "Destroying workspace: ${{ inputs.workspace }}"
-            terraform workspace select ${{ inputs.workspace }}
+            terraform workspace select "${{ inputs.workspace }}"
             terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
           fi
