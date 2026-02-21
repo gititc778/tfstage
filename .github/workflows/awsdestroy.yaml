@@ -95,10 +95,15 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
+          aws-region: us-east-1
 
+      ########################################
+      # Setup Terraform (WRAPPER DISABLED)
+      ########################################
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -142,24 +147,21 @@ jobs:
         run: |
           set -e
 
-          # Find the real terraform binary (not the wrapper)
-          REAL_TF=$(which terraform)
-
           if [ "${{ inputs.destroy_mode }}" = "all" ]; then
             echo "Destroying ALL workspaces..."
 
-            for ws in $($REAL_TF workspace list -no-color | sed 's/*//g'); do
+            for ws in $(terraform workspace list -no-color | sed 's/*//g'); do
               ws=$(echo "$ws" | xargs)
 
               if [ -n "$ws" ] && [ "$ws" != "default" ]; then
                 echo "Switching to workspace: $ws"
-                $REAL_TF workspace select "$ws"
-                $REAL_TF destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+                terraform workspace select "$ws"
+                terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
               fi
             done
 
           else
             echo "Destroying workspace: ${{ inputs.workspace }}"
-            $REAL_TF workspace select "${{ inputs.workspace }}"
-            $REAL_TF destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+            terraform workspace select "${{ inputs.workspace }}"
+            terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
           fi
