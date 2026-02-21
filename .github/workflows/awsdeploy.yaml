@@ -68,6 +68,7 @@ on:
 
 jobs:
   terraform:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     defaults:
@@ -86,7 +87,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -130,7 +131,22 @@ jobs:
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
       ########################################
-      # Terraform Plan
+      # Terraform FMT
+      ########################################
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      ########################################
+      # Terraform Validate
+      ########################################
+      - name: Terraform Validate
+        run: terraform validate
+
+      ########################################
+      # Terraform Plan and apply
       ########################################
       - name: Terraform Plan
-        run: terraform plan -var='services_to_deploy=${{ steps.build.outputs.services }}'
+        run: terraform plan -var='services_to_deploy=${{ steps.build.outputs.services }}' -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

@@ -14,3 +14,7 @@ ecr_repository_name = "terraform-sandbox-repo"
 
 notebook_instance_type = "ml.t3.micro"
 
+
+redshift_master_username = "admin"
+redshift_master_password = "Terraform123!"
+

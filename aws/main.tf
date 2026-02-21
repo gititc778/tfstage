@@ -23,7 +23,8 @@ locals {
     contains(var.services_to_deploy, "ecs") ||
     contains(var.services_to_deploy, "lambda") ||
     contains(var.services_to_deploy, "rds") ||
-    contains(var.services_to_deploy, "opensearch")
+    contains(var.services_to_deploy, "opensearch") ||
+    contains(var.services_to_deploy, "redshift")
   )
 }
 
@@ -74,7 +75,7 @@ module "rds" {
   for_each = contains(var.services_to_deploy, "rds") ? { rds = true } : {}
 
   vpc_id             = module.vpc["network"].vpc_id
-  private_subnet_ids = module.vpc["network"].private_subnet_ids
+  private_subnet_ids = module.vpc["network"].public_subnet_id
   db_username        = var.rds_db_username
   db_password        = var.rds_db_password
 }
@@ -171,4 +172,22 @@ module "sagemaker" {
 module "quicksight" {
   source   = "./modules/quicksight"
   for_each = contains(var.services_to_deploy, "quicksight") ? { quicksight = true } : {}
+}
+
+
+################################
+# REDSHIFT MODULE
+################################
+
+module "redshift" {
+  source   = "./modules/redshift"
+  for_each = contains(var.services_to_deploy, "redshift") ? { redshift = true } : {}
+
+  vpc_id     = module.vpc["network"].vpc_id
+  subnet_ids = module.vpc["network"].public_subnet_id
+
+  master_username = var.redshift_master_username
+  master_password = var.redshift_master_password
+
+  allowed_cidr_blocks = [var.vpc_cidr_block]
 }

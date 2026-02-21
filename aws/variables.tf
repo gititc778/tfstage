@@ -41,3 +41,13 @@ variable "ecr_repository_name" {
 variable "notebook_instance_type" {
   type = string
 }
+
+
+variable "redshift_master_username" {
+  type = string
+}
+
+variable "redshift_master_password" {
+  type      = string
+  sensitive = true
+}
