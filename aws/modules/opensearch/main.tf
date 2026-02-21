@@ -20,10 +20,10 @@ resource "aws_opensearch_domain" "this" {
   access_policies = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = "*"
-      Action = "es:*"
-      Resource = "*"
+      Action    = "es:*"
+      Resource  = "*"
     }]
   })
 }

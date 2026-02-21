@@ -22,7 +22,7 @@ resource "aws_security_group" "redshift_sg" {
     from_port   = 5439
     to_port     = 5439
     protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks   # e.g. ["0.0.0.0/0"] for full public
+    cidr_blocks = var.allowed_cidr_blocks # e.g. ["0.0.0.0/0"] for full public
   }
 
   egress {
@@ -77,10 +77,10 @@ resource "aws_redshift_cluster" "this" {
   master_password    = var.master_password
 
   # Dev/Test Settings
-  cluster_type       = "single-node"
-  node_type          = "dc2.large"
+  cluster_type = "single-node"
+  node_type    = "dc2.large"
 
-  iam_roles          = [aws_iam_role.redshift_role.arn]
+  iam_roles                 = [aws_iam_role.redshift_role.arn]
   cluster_subnet_group_name = aws_redshift_subnet_group.this.name
   vpc_security_group_ids    = [aws_security_group.redshift_sg.id]
 
