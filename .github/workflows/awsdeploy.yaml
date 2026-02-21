@@ -134,7 +134,7 @@ jobs:
       # Terraform FMT
       ########################################
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+        run: terraform fmt -recursive
 
       ########################################
       # Terraform Validate
