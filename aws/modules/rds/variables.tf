@@ -14,3 +14,8 @@ variable "db_password" {
   type      = string
   sensitive = true
 }
+
+variable "rds_engine" {
+  description = "RDS engine type"
+  type        = string
+}

@@ -42,14 +42,14 @@ resource "aws_db_subnet_group" "this" {
 
 resource "aws_db_instance" "this" {
   identifier             = "terraform-rds-${random_string.suffix.result}"
-  engine                 = "mysql"
+  engine                 = var.rds_engine
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   username               = var.db_username
-  password               = "Terraform123!"
+  password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.this.id]
   skip_final_snapshot    = true
-  publicly_accessible    = false
+  publicly_accessible    = true
   deletion_protection    = false
 }

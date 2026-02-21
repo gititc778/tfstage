@@ -56,7 +56,6 @@ on:
         description: "Deploy QuickSight"
         type: boolean
         default: false
-
       workspace:
         description: "Workspace"
         required: true
@@ -65,6 +64,10 @@ on:
         options:
           - aws1
           - aws2
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   terraform:
@@ -80,13 +83,12 @@ jobs:
         uses: actions/checkout@v3
 
       ########################################
-      # AWS LOGIN
+      # AWS LOGIN (OIDC)
       ########################################
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::666127452756:role/terraform-deployer-role
           aws-region: eu-west-2
 
       - name: Setup Terraform
@@ -110,7 +112,6 @@ jobs:
         id: build
         run: |
           SERVICES="["
-
           [ "${{ inputs.ec2 }}" == "true" ] && SERVICES="$SERVICES\"ec2\","
           [ "${{ inputs.s3 }}" == "true" ] && SERVICES="$SERVICES\"s3\","
           [ "${{ inputs.rds }}" == "true" ] && SERVICES="$SERVICES\"rds\","
@@ -124,27 +125,15 @@ jobs:
           [ "${{ inputs.opensearch }}" == "true" ] && SERVICES="$SERVICES\"opensearch\","
           [ "${{ inputs.sagemaker }}" == "true" ] && SERVICES="$SERVICES\"sagemaker\","
           [ "${{ inputs.quicksight }}" == "true" ] && SERVICES="$SERVICES\"quicksight\","
-
-
           SERVICES="${SERVICES%,}]"
-
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-      ########################################
-      # Terraform FMT
-      ########################################
       - name: Terraform Format Check
         run: terraform fmt -recursive
 
-      ########################################
-      # Terraform Validate
-      ########################################
       - name: Terraform Validate
         run: terraform validate
 
-      ########################################
-      # Terraform Plan and apply
-      ########################################
       - name: Terraform Plan
         run: terraform plan -var='services_to_deploy=${{ steps.build.outputs.services }}' -out=tfplan
 

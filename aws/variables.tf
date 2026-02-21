@@ -51,3 +51,18 @@ variable "redshift_master_password" {
   type      = string
   sensitive = true
 }
+
+
+variable "rds_engine" {
+  description = "RDS engine type"
+  type        = string
+}
+
+variable "key_name" {
+  type = string
+}
+
+
+variable "ecs_container_image" {
+  type = string
+}

@@ -13,7 +13,7 @@ resource "random_string" "suffix" {
 ################################
 
 data "aws_subnet" "selected" {
-  id = var.subnet_id
+  id = var.subnet_ids[0]
 }
 
 resource "aws_security_group" "this" {
@@ -48,8 +48,9 @@ resource "aws_instance" "this" {
   instance_type = var.instance_type
 
 
-  subnet_id              = var.subnet_id
+  subnet_id            = var.subnet_ids[0]
   vpc_security_group_ids = [aws_security_group.this.id]
+  key_name = var.key_name 
 
   tags = {
     Name = "terraform-ec2-${random_string.suffix.result}"

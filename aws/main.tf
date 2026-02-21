@@ -36,7 +36,7 @@ module "vpc" {
   source   = "./modules/vpc"
   for_each = local.needs_network ? { network = true } : {}
 
-  cidr_block = var.vpc_cidr_block
+  vpc_cidr_block = var.vpc_cidr_block
 
 }
 
@@ -48,9 +48,10 @@ module "ec2" {
   source   = "./modules/ec2"
   for_each = contains(var.services_to_deploy, "ec2") ? { ec2 = true } : {}
 
-  subnet_id     = module.vpc["network"].public_subnet_id
+  subnet_ids    = module.vpc["network"].public_subnet_ids
   ami           = var.ec2_ami
   instance_type = var.ec2_instance_type
+  key_name      = var.key_name
 }
 
 
@@ -75,9 +76,10 @@ module "rds" {
   for_each = contains(var.services_to_deploy, "rds") ? { rds = true } : {}
 
   vpc_id             = module.vpc["network"].vpc_id
-  private_subnet_ids = module.vpc["network"].public_subnet_id
+  private_subnet_ids = module.vpc["network"].public_subnet_ids
   db_username        = var.rds_db_username
   db_password        = var.rds_db_password
+  rds_engine         = var.rds_engine
 }
 
 ################################
@@ -184,10 +186,21 @@ module "redshift" {
   for_each = contains(var.services_to_deploy, "redshift") ? { redshift = true } : {}
 
   vpc_id     = module.vpc["network"].vpc_id
-  subnet_ids = module.vpc["network"].public_subnet_id
+  subnet_ids = module.vpc["network"].public_subnet_ids
 
   master_username = var.redshift_master_username
   master_password = var.redshift_master_password
 
   allowed_cidr_blocks = [var.vpc_cidr_block]
+}
+
+
+module "ecs" {
+  source   = "./modules/ecs"
+  for_each = contains(var.services_to_deploy, "ecs") ? { ecs = true } : {}
+
+  vpc_id          = module.vpc["network"].vpc_id
+  subnet_ids      = module.vpc["network"].public_subnet_ids
+  container_image = var.ecs_container_image
+  container_port  = 80
 }
