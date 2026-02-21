@@ -138,22 +138,25 @@ jobs:
       # Terraform Destroy
       ########################################
       - name: Terraform Destroy
+        shell: bash
         run: |
-          if [ "${{ inputs.destroy_mode }}" == "all" ]; then
+          set -e
+
+          if [ "${{ inputs.destroy_mode }}" = "all" ]; then
             echo "Destroying ALL workspaces..."
 
-            terraform workspace list | sed 's/*//' | while read ws; do
-              ws=$(echo "$ws" | xargs)
+            WORKSPACES=$(terraform workspace list -no-color | sed 's/*//' | awk '{$1=$1};1')
 
-              if [ -n "$ws" ] && [ "$ws" != "default" ]; then
+            for ws in $WORKSPACES; do
+              if [ "$ws" != "default" ]; then
                 echo "Switching to workspace: $ws"
-                terraform workspace select "$ws"
+                terraform workspace select "$ws" -no-color
                 terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
               fi
             done
 
           else
             echo "Destroying workspace: ${{ inputs.workspace }}"
-            terraform workspace select "${{ inputs.workspace }}"
+            terraform workspace select "${{ inputs.workspace }}" -no-color
             terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
           fi
