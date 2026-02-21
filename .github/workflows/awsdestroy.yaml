@@ -142,21 +142,24 @@ jobs:
         run: |
           set -e
 
+          # Find the real terraform binary (not the wrapper)
+          REAL_TF=$(which terraform)
+
           if [ "${{ inputs.destroy_mode }}" = "all" ]; then
             echo "Destroying ALL workspaces..."
 
-            WORKSPACES=$(terraform workspace list -no-color | sed 's/*//' | awk '{$1=$1};1')
+            for ws in $($REAL_TF workspace list -no-color | sed 's/*//g'); do
+              ws=$(echo "$ws" | xargs)
 
-            for ws in $WORKSPACES; do
-              if [ "$ws" != "default" ]; then
+              if [ -n "$ws" ] && [ "$ws" != "default" ]; then
                 echo "Switching to workspace: $ws"
-                terraform workspace select "$ws" -no-color
-                terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+                $REAL_TF workspace select "$ws"
+                $REAL_TF destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
               fi
             done
 
           else
             echo "Destroying workspace: ${{ inputs.workspace }}"
-            terraform workspace select "${{ inputs.workspace }}" -no-color
-            terraform destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
+            $REAL_TF workspace select "${{ inputs.workspace }}"
+            $REAL_TF destroy -auto-approve -var='services_to_deploy=${{ steps.build.outputs.services }}'
           fi
