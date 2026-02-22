@@ -37,6 +37,10 @@ on:
         description: "Destroy ECR"
         type: boolean
         default: false
+      ecs:
+        description: "Destroy ECS"
+        type: boolean
+        default: false
       lambda:
         description: "Destroy Lambda"
         type: boolean
@@ -71,6 +75,10 @@ on:
         default: false
       quicksight:
         description: "Destroy QuickSight"
+        type: boolean
+        default: false
+      redshift:
+        description: "Destroy redshift"
         type: boolean
         default: false
 
