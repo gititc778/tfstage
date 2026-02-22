@@ -17,11 +17,11 @@ on:
         type: boolean
         default: false
       ecr:
-        description: "Deploy ECS"
+        description: "Deploy ECR"
         type: boolean
         default: false
       ecs:
-        description: "Deploy ECR"
+        description: "Deploy ECS"
         type: boolean
         default: false
       lambda:

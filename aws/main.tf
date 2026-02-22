@@ -195,6 +195,12 @@ module "redshift" {
 }
 
 
+
+################################
+# ECS MODULE
+################################
+
+
 module "ecs" {
   source   = "./modules/ecs"
   for_each = contains(var.services_to_deploy, "ecs") ? { ecs = true } : {}
