@@ -56,6 +56,10 @@ on:
         description: "Deploy QuickSight"
         type: boolean
         default: false
+      redshift:
+        description: "Deploy redshift"
+        type: boolean
+        default: false
       workspace:
         description: "Workspace"
         required: true
@@ -125,6 +129,8 @@ jobs:
           [ "${{ inputs.opensearch }}" == "true" ] && SERVICES="$SERVICES\"opensearch\","
           [ "${{ inputs.sagemaker }}" == "true" ] && SERVICES="$SERVICES\"sagemaker\","
           [ "${{ inputs.quicksight }}" == "true" ] && SERVICES="$SERVICES\"quicksight\","
+          [ "${{ inputs.redshift }}" == "true" ] && SERVICES="$SERVICES\"redshift\","
+          [ "${{ inputs.ecs }}" == "true" ] && SERVICES="$SERVICES\"ecs\","
           SERVICES="${SERVICES%,}]"
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
