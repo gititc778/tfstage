@@ -17,6 +17,10 @@ on:
         type: boolean
         default: false
       ecr:
+        description: "Deploy ECS"
+        type: boolean
+        default: false
+      ecs:
         description: "Deploy ECR"
         type: boolean
         default: false
