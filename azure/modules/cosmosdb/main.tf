@@ -1,9 +1,9 @@
 resource "azurerm_cosmosdb_account" "db" {
-  name                = var.name
+  name                = lower(var.name)
   location            = var.location
   resource_group_name = var.resource_group_name
   offer_type          = "Standard"
-  kind                = "GlobalDocumentDB" # SQL API
+  kind                = "GlobalDocumentDB"
 
   consistency_policy {
     consistency_level = "Session"
@@ -18,7 +18,7 @@ resource "azurerm_cosmosdb_account" "db" {
 }
 
 resource "azurerm_cosmosdb_sql_database" "sql_db" {
-  name                = "${var.name}-sqldb"
+  name                = "${lower(var.name)}-sqldb"
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.db.name
 }

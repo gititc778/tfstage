@@ -1,11 +1,12 @@
-output "id" {
-  value = azurerm_eventhub_namespace.evh_ns.id
-}
-
-output "name" {
-  value = azurerm_eventhub_namespace.evh_ns.name
+output "eventhub_namespace_name" {
+  value = azurerm_eventhub_namespace.ns.name
 }
 
 output "eventhub_name" {
-  value = azurerm_eventhub.evh.name
+  value = azurerm_eventhub.hub.name
+}
+
+output "eventhub_connection_string" {
+  value     = azurerm_eventhub_namespace.ns.default_primary_connection_string
+  sensitive = true
 }

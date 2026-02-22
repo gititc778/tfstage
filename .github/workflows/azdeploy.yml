@@ -1,14 +1,9 @@
-name: "Deploy_Azure"
-run-name: "Deploying to ${{ inputs.workspace }}"
+name: Deploy Azure
+run-name: Deploying to ${{ inputs.workspace }}
 
 on:
   workflow_dispatch:
     inputs:
-      # --- INDIVIDUAL CHECKBOXES ---
-      all:
-        description: 'Deploy EVERYTHING'
-        type: boolean
-        default: false
       databricks:
         description: 'Deploy Databricks'
         type: boolean
@@ -33,27 +28,34 @@ on:
         description: 'Deploy EventHub'
         type: boolean
         default: false
-      # --- WORKSPACE DROPDOWN ---
+      vm:
+        description: 'Deploy Virtual Machine'
+        type: boolean
+        default: false
+      aks:
+        description: 'Deploy AKS'
+        type: boolean
+        default: false
       workspace:
         description: 'Workspace'
         required: true
         default: 'azure1'
         type: choice
         options:
-        - azure1
-        - azure2
+          - azure1
+          - azure2
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   terraform:
-    name: "Terraform Deploy to ${{ inputs.workspace }}"
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: azure
+
     env:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -66,8 +68,6 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
 
       - name: Terraform Init
         run: terraform init
@@ -77,30 +77,37 @@ jobs:
           terraform workspace select ${{ inputs.workspace }} || \
           terraform workspace new ${{ inputs.workspace }}
 
-      - name: Terraform Plan
+      ########################################
+      # Build services list (ONLY selected)
+      ########################################
+      - name: Build services list
+        id: build
         run: |
-          PLAN_ARGS=""
+          SERVICES="["
           
-          # If 'all' is checked, don't use -target
-          if [ "${{ inputs.all }}" == "true" ]; then
-            echo "Running full plan for workspace ${{ inputs.workspace }}..."
-          else
-            # Build the target string based on boolean inputs
-            [ "${{ inputs.databricks }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.databricks"
-            [ "${{ inputs.data_factory }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.data_factory"
-            [ "${{ inputs.synapse }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.synapse"
-            [ "${{ inputs.functions }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.functions"
-            [ "${{ inputs.cosmosdb }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.cosmosdb"
-            [ "${{ inputs.eventhub }}" == "true" ] && PLAN_ARGS="$PLAN_ARGS -target=module.eventhub"
+          [ "${{ inputs.databricks }}" == "true" ] && SERVICES="$SERVICES\"databricks\","
+          [ "${{ inputs.data_factory }}" == "true" ] && SERVICES="$SERVICES\"data_factory\","
+          [ "${{ inputs.synapse }}" == "true" ] && SERVICES="$SERVICES\"synapse\","
+          [ "${{ inputs.functions }}" == "true" ] && SERVICES="$SERVICES\"functions\","
+          [ "${{ inputs.cosmosdb }}" == "true" ] && SERVICES="$SERVICES\"cosmosdb\","
+          [ "${{ inputs.eventhub }}" == "true" ] && SERVICES="$SERVICES\"eventhub\","
+          [ "${{ inputs.vm }}" == "true" ] && SERVICES="$SERVICES\"vm\","
+          [ "${{ inputs.aks }}" == "true" ] && SERVICES="$SERVICES\"aks\","
 
-            if [ -z "$PLAN_ARGS" ]; then
-              echo "Error: No modules selected and 'All' is false."
-              exit 1
-            fi
-            echo "Running targeted plan for:$PLAN_ARGS in ${{ inputs.workspace }}"
+          SERVICES="${SERVICES%,}]"
+
+          if [ "$SERVICES" == "[" ]; then
+            echo "Error: No services selected."
+            exit 1
           fi
-          
-          terraform plan $PLAN_ARGS -out=tfplan
+
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var='services_to_deploy=${{ steps.build.outputs.services }}' -out=tfplan
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan

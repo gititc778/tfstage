@@ -2,17 +2,16 @@ variable "name" {
   type = string
 }
 
-variable "resource_group_name" {
-  type = string
-}
-
 variable "location" {
   type = string
 }
 
+variable "resource_group_name" {
+  type = string
+}
+
 variable "sql_admin_login" {
-  type    = string
-  default = "sqladminuser"
+  type = string
 }
 
 variable "sql_admin_password" {
