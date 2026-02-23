@@ -66,3 +66,15 @@ variable "key_name" {
 variable "ecs_container_image" {
   type = string
 }
+
+
+variable "ec2_instance_count" {
+  description = "Number of EC2 instances to create"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.ec2_instance_count >= 1 && var.ec2_instance_count <= 3
+    error_message = "You can deploy minimum 1 and maximum 3 EC2 instances."
+  }
+}

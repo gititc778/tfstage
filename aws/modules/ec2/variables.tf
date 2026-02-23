@@ -13,3 +13,7 @@ variable "subnet_ids" {
 variable "key_name" {
   type = string
 }
+
+variable "instance_count" {
+  type = number
+}
