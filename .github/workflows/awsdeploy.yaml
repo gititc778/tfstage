@@ -154,6 +154,8 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -var='services_to_deploy=${{ steps.build.outputs.services }}' -out=tfplan
+        env:
+          TF_VAR_ec2_instance_count: ${{ inputs.ec2_count }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
