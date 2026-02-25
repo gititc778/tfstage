@@ -14,6 +14,7 @@ locals {
 
   common_tags = {
     ManagedBy = "Terraform"
+    tech      = terraform.workspace
   }
 
   needs_network = (

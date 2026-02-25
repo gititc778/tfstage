@@ -78,8 +78,10 @@ on:
         default: "aws1"
         type: choice
         options:
-          - aws1
-          - aws2
+          - datascience
+          - devops
+          - bigdata
+
 
 permissions:
   id-token: write

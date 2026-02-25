@@ -18,8 +18,9 @@ on:
         required: false
         type: choice
         options:
-          - aws1
-          - aws2
+         - datascience
+         - devops
+         - bigdata
 
       ec2:
         description: "Destroy EC2"

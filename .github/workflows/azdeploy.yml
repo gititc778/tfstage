@@ -29,7 +29,7 @@ on:
         type: boolean
         default: false
       vm:
-        description: 'Deploy Virtual Machine'
+        description: 'Deploy VM'
         type: boolean
         default: false
       aks:
@@ -39,11 +39,11 @@ on:
       workspace:
         description: 'Workspace'
         required: true
-        default: 'azure1'
         type: choice
-        options:
-          - azure1
-          - azure2
+        options:        
+          - datascience
+          - devops
+          - bigdata
 
 permissions:
   contents: read

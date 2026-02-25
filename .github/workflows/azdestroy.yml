@@ -18,8 +18,10 @@ on:
         required: false
         type: choice
         options:
-          - azure1
-          - azure2
+          - datascience
+          - devops
+          - bigdata
+
 
       databricks:
         description: "Destroy Databricks"
