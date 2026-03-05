@@ -84,17 +84,17 @@ module "rds" {
 }
 
 ################################
-# LAMBDA MODULE #SS
+# LAMBDA MODULE
 ################################
 
-# module "lambda" {
-#   source   = "./modules/lambda"
-#   for_each = contains(var.services_to_deploy, "lambda") ? { lambda = true } : {}
+module "lambda" {
+  source   = "./modules/lambda"
+  for_each = contains(var.services_to_deploy, "lambda") ? { lambda = true } : {}
 
-#   subnet_ids         = module.vpc["network"].private_subnet_ids
-#   vpc_id             = module.vpc["network"].vpc_id
-# }
-
+  lambda_role_arn = var.lambda_role_arn
+  runtime         = var.lambda_runtime
+  handler         = var.lambda_handler
+}
 
 ################################
 # ECR MODULE
@@ -103,8 +103,8 @@ module "rds" {
 module "ecr" {
   source   = "./modules/ecr"
   for_each = contains(var.services_to_deploy, "ecr") ? { ecr = true } : {}
+  
 
-  repository_name = var.ecr_repository_name
 }
 
 
@@ -154,7 +154,8 @@ module "glue" {
 
 module "opensearch" {
   source   = "./modules/opensearch"
-  for_each = contains(var.services_to_deploy, "opensearch") ? { opensearch = true } : {}
+  for_each = contains(var.services_to_deploy, "opensearch") ? { opensearch = true } : {}  
+  instance_type = var.opensearh_instance_type  
 }
 
 ################################
@@ -206,8 +207,9 @@ module "ecs" {
   source   = "./modules/ecs"
   for_each = contains(var.services_to_deploy, "ecs") ? { ecs = true } : {}
 
-  vpc_id          = module.vpc["network"].vpc_id
-  subnet_ids      = module.vpc["network"].public_subnet_ids
-  container_image = var.ecs_container_image
-  container_port  = 80
+  ##use the following when creating task definition or service
+  # vpc_id          = module.vpc["network"].vpc_id
+  # subnet_ids      = module.vpc["network"].public_subnet_ids
+  # container_image = var.ecs_container_image
+  # container_port  = 80    
 }

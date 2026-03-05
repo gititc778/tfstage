@@ -1,7 +1,11 @@
-variable "subnet_ids" {
-  type = list(string)
+variable "lambda_role_arn" {
+  type = string
 }
 
-variable "vpc_id" {
+variable "runtime" {
+  type = string
+}
+
+variable "handler" {
   type = string
 }

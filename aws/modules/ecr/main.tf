@@ -5,11 +5,7 @@ resource "random_string" "suffix" {
 }
 
 resource "aws_ecr_repository" "this" {
-  name = "${var.repository_name}-${random_string.suffix.result}"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+  name = "terraform-ecr-${random_string.suffix.result}"
 
   force_delete = true
 }

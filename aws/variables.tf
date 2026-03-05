@@ -34,10 +34,6 @@ variable "rds_db_password" {
   sensitive = true
 }
 
-variable "ecr_repository_name" {
-  type = string
-}
-
 variable "notebook_instance_type" {
   type = string
 }
@@ -77,4 +73,22 @@ variable "ec2_instance_count" {
     condition     = var.ec2_instance_count >= 1 && var.ec2_instance_count <= 3
     error_message = "You can deploy minimum 1 and maximum 3 EC2 instances."
   }
+}
+
+variable "opensearh_instance_type" {
+  
+}
+
+
+
+variable "lambda_role_arn" {
+  type = string
+}
+
+variable "lambda_runtime" {
+  type = string
+}
+
+variable "lambda_handler" {
+  type = string
 }
