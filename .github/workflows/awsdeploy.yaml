@@ -172,6 +172,9 @@ jobs:
           SERVICES="${SERVICES%,}]"
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
+      - name: Debug services list
+        run: echo "Services = ${{ steps.build.outputs.services }}"
+
       - name: Terraform Format Check
         run: terraform fmt -recursive
 
