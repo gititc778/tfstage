@@ -125,7 +125,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::666127452756:role/terraform-deployer-role
-          aws-region: eu-north-1
+          aws-region: eu-west-2
 
       ########################################
       # Setup Terraform
