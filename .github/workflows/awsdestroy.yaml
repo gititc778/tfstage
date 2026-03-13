@@ -21,6 +21,7 @@ on:
          - datascience
          - devops
          - bigdata
+         - pmo
 
       ec2:
         description: "Destroy EC2"

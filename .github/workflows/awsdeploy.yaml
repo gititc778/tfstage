@@ -99,6 +99,7 @@ on:
           - datascience
           - devops
           - bigdata
+          - pmo
 
 
 permissions:
